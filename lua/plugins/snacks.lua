@@ -34,6 +34,9 @@ return {
 			rename = {
 				enabled = true,
 			},
+			statuscolumn = {
+				enabled = true,
+			},
 		},
 		keys = {
 			{
