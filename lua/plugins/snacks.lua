@@ -18,9 +18,6 @@ return {
 			animate = {
 				enabled = true,
 			},
-			image = {
-				enabled = true,
-			},
 			notifier = {
 				enabled = true,
 			},
