@@ -6,7 +6,10 @@ return {
 			"neovim/nvim-lspconfig",
 		},
 		opts = {
-			ensure_installed = { "lua_ls" },
+			ensure_installed = {
+				"lua_ls",
+				"jsonls",
+			},
 		},
 	},
 	{
@@ -35,6 +38,7 @@ return {
 			opts = {
 				ensure_installed = {
 					"stylua",
+					"prettier",
 				},
 				auto_update = true,
 				run_on_start = true,
@@ -48,6 +52,8 @@ return {
 		opts = {
 			formatters_by_ft = {
 				lua = { "stylua" },
+				json = { "prettier" },
+				jsonc = { "prettier" },
 			},
 		},
 		keys = {
@@ -68,6 +74,8 @@ return {
 			ensure_installed = {
 				"lua",
 				"rust",
+				"json",
+				"jsonc",
 			},
 			highlight = {
 				enable = true,
