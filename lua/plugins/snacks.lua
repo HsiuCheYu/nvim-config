@@ -34,6 +34,9 @@ return {
 			statuscolumn = {
 				enabled = true,
 			},
+			bigfile = {
+				enabled = true,
+			},
 		},
 		keys = {
 			{
