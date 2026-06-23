@@ -19,6 +19,19 @@ opt.incsearch = true
 
 opt.mouse = "a"
 opt.clipboard = "unnamedplus"
+if vim.env.SSH_TTY or vim.env.SSH_CONNECTION then
+  vim.g.clipboard = {
+    name = 'OSC 52',
+    copy = {
+      ['+'] = require('vim.ui.clipboard.osc52').copy('+'),
+      ['*'] = require('vim.ui.clipboard.osc52').copy('*'),
+    },
+    paste = {
+      ['+'] = function() return vim.fn.split(vim.fn.getreg('"'), '\n') end,
+      ['*'] = function() return vim.fn.split(vim.fn.getreg('"'), '\n') end,
+    },
+  }
+end
 
 opt.swapfile = false
 opt.backup = false
