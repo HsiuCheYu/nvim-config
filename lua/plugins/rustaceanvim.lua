@@ -13,7 +13,7 @@ return {
 							granularity = { enforce = true },
 							prefix = "crate",
 						},
-						linkedProjects = { "/home/yuwhisper/projects/linux/build/rust-project.json" },
+						-- linkedProjects = { "/home/yuwhisper/projects/linux/build/rust-project.json" },
 					},
 				},
 				tools = {
