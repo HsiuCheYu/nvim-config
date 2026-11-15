@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 安裝這份 nvim 設定需要的外部依賴 (macOS / Debian / Ubuntu)。
-# 可重複執行:已經符合版本的工具會略過。Windows 請用 install.ps1。
+# 安裝這份 nvim 設定需要的外部依賴 (Ubuntu / Debian,使用 apt)。
+# 可重複執行:已經符合版本的工具會略過。Windows 請使用 windows 分支的 install.ps1。
 #
 # 用法:./install.sh [--no-rust] [--no-plugins]
 #   --no-rust     不安裝 Rust 工具鏈 (rustup / rust-analyzer / clippy)
@@ -59,7 +59,7 @@ if [ "$(id -u)" -ne 0 ]; then
 	SUDO="sudo"
 fi
 
-OS="$(uname -s)"
+[ "$(uname -s)" = "Linux" ] || die "此分支只支援 Linux (Ubuntu / Debian);Windows 請使用 windows 分支"
 ARCH="$(uname -m)"
 case "$ARCH" in
 x86_64 | amd64) ARCH_NVIM="x86_64" ARCH_TS="x64" ARCH_LG="x86_64" ;;
@@ -69,7 +69,6 @@ esac
 
 download() { curl -fsSL --retry 3 "$1" -o "$2"; }
 
-# ---------------------------------------------------------------- Linux 用 --
 install_nvim_linux() {
 	local cur
 	cur="$(nvim_version)"
@@ -132,21 +131,6 @@ install_linux() {
 	install_lazygit_linux || warn "lazygit 安裝失敗 (選用,<leader>gg 會用到),可稍後手動安裝"
 }
 
-# ---------------------------------------------------------------- macOS 用 --
-install_macos() {
-	xcode-select -p >/dev/null 2>&1 || {
-		xcode-select --install || true
-		die "請先完成 Xcode Command Line Tools 安裝 (提供 git / clang / make),再重新執行本腳本"
-	}
-	have brew || die "找不到 Homebrew,請先安裝:https://brew.sh"
-	log "brew 安裝套件"
-	brew install neovim ripgrep fd node lazygit tree-sitter-cli
-	# 確認版本 (brew 偶爾落後於 nvim-treesitter 的要求)
-	local cur
-	cur="$(nvim_version)"
-	[ -n "$cur" ] && version_ge "$cur" "$MIN_NVIM" || warn "neovim ${cur:-?} 低於 $MIN_NVIM,請執行 brew upgrade neovim"
-}
-
 # ------------------------------------------------------------------- Rust --
 install_rust() {
 	if [ "$WITH_RUST" -eq 0 ]; then
@@ -165,11 +149,7 @@ install_rust() {
 }
 
 # ------------------------------------------------------------------- main --
-case "$OS" in
-Darwin) install_macos ;;
-Linux) install_linux ;;
-*) die "不支援的系統:$OS (Windows 請用 install.ps1)" ;;
-esac
+install_linux
 install_rust
 
 # Ubuntu 22.04 等舊版 apt 的 nodejs 太舊,prettier 會裝不起來

@@ -1,17 +1,11 @@
--- 外部依賴清單與檢查。
+-- 外部依賴清單與檢查 (Ubuntu / Debian)。
 --   * 啟動時只檢查「必要」工具,缺少就提醒一次
 --   * :Deps 等同 :checkhealth config,列出完整狀態(含版本、選用工具)
---   * 安裝請執行 install.sh (macOS / Linux) 或 install.ps1 (Windows)
+--   * 安裝請執行 install.sh
 --
 -- 停用啟動檢查:vim.g.deps_check = false
 
 local M = {}
-
-local uv = vim.uv or vim.loop
-local sysname = uv.os_uname().sysname
-
----@type "mac"|"linux"|"windows"
-M.os = sysname == "Darwin" and "mac" or (sysname == "Windows_NT" and "windows" or "linux")
 
 -- 與 lazy-lock.json 鎖定的 nvim-treesitter (main 分支) 要求一致
 M.min_nvim = "0.12"
@@ -21,60 +15,17 @@ M.min_nvim = "0.12"
 ---@field bins string[]       任一個存在即視為已安裝(例如 Ubuntu 的 fd 叫 fdfind)
 ---@field why string          用途 / 哪個外掛需要
 ---@field required? boolean   true: 缺少會影響核心功能
----@field only? string[]      只在這些平台檢查
 ---@field version? { args: string[], min: string }
----@field extra? fun(): string?  bins 都找不到時的額外偵測,回傳名稱代表找到
 
 ---@type config.Dep[]
 local deps = {
 	{ name = "git", bins = { "git" }, required = true, why = "lazy.nvim 安裝/更新外掛、gitsigns" },
 	{ name = "curl", bins = { "curl" }, required = true, why = "nvim-treesitter 與 Mason 下載檔案、smart-translate" },
 	{ name = "tar", bins = { "tar" }, required = true, why = "nvim-treesitter 與 Mason 解壓縮" },
-	{ name = "unzip", bins = { "unzip" }, required = true, only = { "mac", "linux" }, why = "Mason 解壓縮套件" },
-	{ name = "gzip", bins = { "gzip" }, required = true, only = { "mac", "linux" }, why = "Mason 解壓縮套件" },
-	{
-		name = "C compiler",
-		bins = { "cc", "gcc", "clang", "cl" },
-		-- Windows 的 MSVC 不一定在 PATH 內 (cl.exe 要在 Developer Prompt),改用 vswhere 偵測
-		extra = function()
-			if M.os ~= "windows" then
-				return
-			end
-			local vswhere = (vim.env["ProgramFiles(x86)"] or "") .. "\\Microsoft Visual Studio\\Installer\\vswhere.exe"
-			if vim.fn.executable(vswhere) == 0 then
-				return
-			end
-			local res = vim.system({
-				vswhere,
-				"-latest",
-				"-products",
-				"*",
-				"-requires",
-				"Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-				"-property",
-				"installationPath",
-			}, { text = true }):wait(5000)
-			if res.code == 0 and vim.trim(res.stdout or "") ~= "" then
-				return "MSVC (vswhere)"
-			end
-		end,
-		required = true,
-		why = "nvim-treesitter 編譯 parser (Windows: Visual Studio Build Tools 的 C++ 工作負載)",
-	},
-	{
-		name = "make",
-		bins = { "make" },
-		required = true,
-		only = { "mac", "linux" },
-		why = "telescope-fzf-native 的 build 步驟",
-	},
-	{
-		name = "cmake",
-		bins = { "cmake" },
-		required = true,
-		only = { "windows" },
-		why = "telescope-fzf-native 的 build 步驟 (Windows 沒有 make)",
-	},
+	{ name = "unzip", bins = { "unzip" }, required = true, why = "Mason 解壓縮套件" },
+	{ name = "gzip", bins = { "gzip" }, required = true, why = "Mason 解壓縮套件" },
+	{ name = "C compiler", bins = { "cc", "gcc", "clang" }, required = true, why = "nvim-treesitter 編譯 parser" },
+	{ name = "make", bins = { "make" }, required = true, why = "telescope-fzf-native 的 build 步驟" },
 	{
 		name = "tree-sitter",
 		bins = { "tree-sitter" },
@@ -91,12 +42,9 @@ local deps = {
 	{ name = "clippy", bins = { "cargo-clippy" }, why = "rust-analyzer 的 check.command = clippy" },
 }
 
----目前平台需要檢查的依賴
 ---@return config.Dep[]
 function M.list()
-	return vim.tbl_filter(function(d)
-		return d.only == nil or vim.tbl_contains(d.only, M.os)
-	end, deps)
+	return deps
 end
 
 ---回傳第一個找到的執行檔名稱,沒有則回傳 nil
@@ -108,7 +56,6 @@ function M.find(dep)
 			return bin
 		end
 	end
-	return dep.extra and dep.extra() or nil
 end
 
 ---執行 `bin --version` 並解析出版本號
@@ -116,7 +63,7 @@ end
 ---@param bin string
 ---@return vim.Version?
 function M.version(dep, bin)
-	if not dep.version or vim.fn.executable(bin) == 0 then
+	if not dep.version then
 		return
 	end
 	local ok, proc = pcall(vim.system, vim.list_extend({ bin }, dep.version.args), { text = true })
@@ -129,17 +76,13 @@ end
 
 ---@return string
 function M.install_hint()
-	local dir = vim.fn.stdpath("config")
-	if M.os == "windows" then
-		return ("powershell -ExecutionPolicy Bypass -File \"%s\\install.ps1\""):format(dir)
-	end
-	return ("bash %s/install.sh"):format(dir)
+	return ("bash %s/install.sh"):format(vim.fn.stdpath("config"))
 end
 
 ---@return config.Dep[] missing  缺少的必要工具
 function M.missing_required()
 	local missing = {}
-	for _, d in ipairs(M.list()) do
+	for _, d in ipairs(deps) do
 		if d.required and not M.find(d) then
 			missing[#missing + 1] = d
 		end

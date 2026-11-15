@@ -12,7 +12,7 @@ function M.check()
 		vim.health.error("Neovim 版本過舊,需要 >= " .. deps.min_nvim, { "請升級 Neovim", deps.install_hint() })
 	end
 
-	vim.health.start("外部工具 (" .. deps.os .. ")")
+	vim.health.start("外部工具 (Ubuntu)")
 	for _, dep in ipairs(deps.list()) do
 		local bin = deps.find(dep)
 		if not bin then
