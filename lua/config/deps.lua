@@ -1,4 +1,4 @@
--- 外部依賴清單與檢查 (Ubuntu / Debian)。
+-- 外部依賴清單與檢查 (macOS / Linux)。
 --   * 啟動時只檢查「必要」工具,缺少就提醒一次
 --   * :Deps 等同 :checkhealth config,列出完整狀態(含版本、選用工具)
 --   * 安裝請執行 install.sh
@@ -24,7 +24,7 @@ local deps = {
 	{ name = "tar", bins = { "tar" }, required = true, why = "nvim-treesitter 與 Mason 解壓縮" },
 	{ name = "unzip", bins = { "unzip" }, required = true, why = "Mason 解壓縮套件" },
 	{ name = "gzip", bins = { "gzip" }, required = true, why = "Mason 解壓縮套件" },
-	{ name = "C compiler", bins = { "cc", "gcc", "clang" }, required = true, why = "nvim-treesitter 編譯 parser" },
+	{ name = "C compiler", bins = { "cc", "gcc", "clang" }, required = true, why = "nvim-treesitter 編譯 parser (macOS: Xcode CLT)" },
 	{ name = "make", bins = { "make" }, required = true, why = "telescope-fzf-native 的 build 步驟" },
 	{
 		name = "tree-sitter",
