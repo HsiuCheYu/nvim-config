@@ -12,6 +12,12 @@ return {
 					or "make",
 			},
 		},
+		config = function()
+			local telescope = require("telescope")
+			telescope.setup({})
+			-- fzf-native 編譯失敗時 (例如沒有 make/cmake) 退回內建排序,不報錯
+			pcall(telescope.load_extension, "fzf")
+		end,
 		keys = {
 			{ "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Find Files" },
 			{ "<leader>fg", "<cmd>Telescope live_grep<cr>", desc = "Live Grep" },
