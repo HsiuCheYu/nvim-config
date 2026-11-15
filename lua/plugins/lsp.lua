@@ -84,18 +84,17 @@ return {
 			local ts = require("nvim-treesitter")
 			ts.setup({})
 
-			-- 要安裝的 parser。jsonc 沒有獨立 parser,filetype 會自動對應到 json
-			local parsers = { "lua", "rust", "json" }
-			local filetypes = { "lua", "rust", "json", "jsonc" }
+			-- parser / filetype 清單與安裝腳本共用 (lua/config/parsers.lua)
+			local cfg = require("config.parsers")
 
 			-- 編譯 parser 需要 tree-sitter-cli 與 C 編譯器 (缺少時 config.deps 會在啟動時提醒)
 			if vim.fn.executable("tree-sitter") == 1 then
-				ts.install(parsers)
+				ts.install(cfg.parsers)
 			end
 
 			vim.api.nvim_create_autocmd("FileType", {
 				group = vim.api.nvim_create_augroup("UserTreesitterHighlight", {}),
-				pattern = filetypes,
+				pattern = cfg.filetypes,
 				callback = function(ev)
 					-- parser 還沒裝好 (首次啟動,背景安裝中) 時會失敗,忽略即可,重開檔案就會生效
 					pcall(vim.treesitter.start, ev.buf)
