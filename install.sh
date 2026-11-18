@@ -80,8 +80,34 @@ load_brew() {
 	return 1
 }
 
+BREW_ON_PATH=0 # 腳本開始時 brew 是否已經在 PATH 上 (是的話不用再寫入 shell 設定檔)
+
+# 把 brew shellenv 寫進 shell 設定檔,讓之後新開的終端機也找得到 brew 裝的工具 (可重複執行,不會重複寫入)
+persist_brew_shellenv() {
+	[ "$BREW_ON_PATH" -eq 0 ] || return 0
+	have brew || return 0
+	local rc line
+	case "$(basename "${SHELL:-}")" in
+	zsh) if [ "$UNAME_S" = "Darwin" ]; then rc="$HOME/.zprofile"; else rc="$HOME/.zshrc"; fi ;;
+	bash) if [ "$UNAME_S" = "Darwin" ]; then rc="$HOME/.bash_profile"; else rc="$HOME/.bashrc"; fi ;;
+	*)
+		warn "無法判斷 shell ($SHELL),請自行把 eval \"\$($(command -v brew) shellenv)\" 加進 shell 設定檔"
+		return 0
+		;;
+	esac
+	if [ -f "$rc" ] && grep -q 'brew shellenv' "$rc"; then
+		log "$rc 已有 brew shellenv"
+		return 0
+	fi
+	line="eval \"\$($(command -v brew) shellenv)\""
+	printf '\n# Homebrew (由 nvim-config 的 install.sh 加入)\n%s\n' "$line" >>"$rc"
+	log "已把 brew shellenv 寫入 $rc,請重新開啟終端機,或執行:source $rc"
+}
+
 setup_brew() {
-	if ! have brew; then
+	if have brew; then
+		BREW_ON_PATH=1
+	else
 		load_brew || true
 	fi
 	if ! have brew; then
@@ -258,6 +284,7 @@ main() {
 	esac
 
 	setup_brew
+	persist_brew_shellenv
 	export PATH="$HOME/.cargo/bin:$PATH"
 	ensure_tools
 	install_font
@@ -267,7 +294,7 @@ main() {
 	if [ "$WITH_FONT" -eq 1 ]; then
 		log "提醒:請在終端機設定使用 \"JetBrainsMono Nerd Font\",否則圖示會顯示成方框"
 	fi
-	log "完成。若剛安裝 Homebrew,請依其提示把 shellenv 加進 ~/.zprofile 或 ~/.bashrc,並重新開啟終端機"
+	log "完成。請重新開啟終端機 (或 source 上面提到的 shell 設定檔),讓 PATH 生效"
 	log "開啟 nvim 後執行 :Deps 可檢查所有依賴;Copilot 請執行 :Copilot auth"
 }
 
